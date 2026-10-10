@@ -25,7 +25,16 @@ function filterProducts() {
   renderProducts(PRODUCTS.filter((product) => product.name.toLowerCase().includes(query)));
 }
 
+function setupThemeToggle() {
+  const button = document.getElementById("theme-toggle");
+  button.addEventListener("click", () => {
+    const dark = document.body.classList.toggle("dark");
+    button.textContent = dark ? "Light mode" : "Dark mode";
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts(PRODUCTS);
+  setupThemeToggle();
   document.getElementById("search").addEventListener("input", filterProducts);
 });

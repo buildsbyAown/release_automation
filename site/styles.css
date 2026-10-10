@@ -104,3 +104,12 @@ main {
   border-radius: 6px;
   font-size: 1rem;
 }
+
+.theme-toggle {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #fff;
+  border-radius: 4px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
