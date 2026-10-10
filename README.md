@@ -1,6 +1,6 @@
 # Collaborative One-Click Release Builder
 
-This workflow lets three developers paste the commit SHAs they want included. It combines the lists, sorts commits by committer timestamp oldest-first, cherry-picks each onto a fresh branch from `main`, stops and reports the original commit author on failure, runs your tests, pushes the release branch, and opens a PR into `main`. It never merges or deploys.
+This workflow lets three developers paste the commit SHAs they want included. It combines the lists, sorts commits by author timestamp oldest-first, cherry-picks each onto a fresh branch from `main`, stops and reports the original commit author on failure, runs your tests, pushes the release branch, and opens a PR into `main`. It never merges or deploys.
 
 ## Important behavior and limitation
 
@@ -34,10 +34,25 @@ Every commit must already exist in the repository and be reachable from a pushed
 The script:
 1. Starts from the latest `main`.
 2. Validates SHAs and rejects duplicates.
-3. Sorts all submitted commits by committer timestamp, oldest first.
+3. Sorts all submitted commits by author timestamp, oldest first. You can submit plain commits or PR merge commits (`Merge pull request #N ...`); a merge commit is applied as that PR's changes (`git cherry-pick -m 1`). Do not submit "Merge branch 'staging' into ..." sync merges, as they would bring in the whole target branch.
 4. Cherry-picks each commit one by one.
-5. If a cherry-pick fails, prints the original commit author, email, SHA, subject, and stops. It aborts the in-progress cherry-pick and does not push a release branch or open a PR.
+5. If a commit's changes are already included (empty cherry-pick), skips it with a warning. If a cherry-pick fails, prints the commit title, SHA, the authors to resolve it (for a PR merge, the authors of the PR's commits), who merged it, branches containing it, and conflicting files, and stops. It aborts the in-progress cherry-pick and does not push a release branch or open a PR.
 6. If all commits apply, runs your configured tests, pushes `release/<release_name>`, and opens a PR into `main`.
+
+## Resolving a cherry-pick conflict
+
+The workflow cannot pause for manual edits, so the author named in the error resolves the conflict locally and resubmits a fixed commit:
+
+1. From a clean checkout, run the same commit list with `--local`:
+   ```bash
+   python3 scripts/assemble_release.py --release-name sprint-10 --local \
+     --dev1 "<shas>" --dev2 "<shas>" --dev3 "<shas>"
+   ```
+   It starts from `origin/main` on a detached HEAD, applies the commits in the same order as the workflow, and stops on the conflicting commit with the cherry-pick left in progress.
+2. Fix the conflict markers, then `git add <files>` and `git cherry-pick --continue`.
+3. Publish the fixed commit: `git push origin HEAD:refs/heads/resolved/<old-short-sha>`.
+4. Replace the old SHA with the new one (`git rev-parse --short HEAD`) in the commit list and re-run step 1. The fixed commit keeps the original author date, so it stays in the same position.
+5. Repeat until the local run reports that all commits apply, then run the workflow with that final list. Run `git switch main` to leave the detached HEAD.
 
 ## GitHub permissions and protections
 
@@ -57,7 +72,7 @@ A stronger future design would have each developer submit an actual GitHub PR re
 
 ## Hotfix handling
 
-Hotfix commits are included in the same timestamp sort as developer commits. This is safer than always applying hotfixes first if they are interleaved with other changes, but timestamps still do not capture dependencies. If a hotfix is already part of `main`, do not submit it; it may become an empty cherry-pick. If a hotfix is a merge commit, `git cherry-pick` needs a mainline parent and this script will stop. Supply the actual hotfix change commits, not the PR merge commit, unless you intentionally adapt the script.
+Hotfix commits are included in the same timestamp sort as developer commits. This is safer than always applying hotfixes first if they are interleaved with other changes, but timestamps still do not capture dependencies. If a hotfix is already part of `main`, do not submit it; it would be skipped as an empty cherry-pick. A hotfix can be submitted as its PR merge commit or as its individual change commits, but not both.
 
 ## Current repository caveat
 
