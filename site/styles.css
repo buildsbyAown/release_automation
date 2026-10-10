@@ -105,6 +105,13 @@ main {
   font-size: 1rem;
 }
 
+/* Added by Ticket 53 – show a message when nothing matches */
+.no-results {
+  grid-column: 1 / -1;
+  color: #667;
+  font-style: italic;
+}
+
 .theme-toggle {
   padding: 0.4rem 0.8rem;
   border: 1px solid #fff;

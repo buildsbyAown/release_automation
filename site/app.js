@@ -17,7 +17,10 @@ function productCard(product) {
 }
 
 function renderProducts(products) {
-  document.getElementById("product-grid").innerHTML = products.map(productCard).join("");
+  const grid = document.getElementById("product-grid");
+  grid.innerHTML = products.length
+    ? products.map(productCard).join("")
+    : '<p class="no-results">No products match your search.</p>';
 }
 
 /* Search functionality from Ticket 53 */
