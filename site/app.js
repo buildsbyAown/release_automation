@@ -12,6 +12,7 @@ function productCard(product) {
     <article class="product-card">
       <h3>${product.name}</h3>
       <p class="price">$${product.price.toFixed(2)}</p>
+      <button class="add-to-cart" type="button" data-id="${product.id}">Add to cart</button>
     </article>`;
 }
 
