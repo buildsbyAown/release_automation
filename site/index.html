@@ -13,13 +13,31 @@
       <a href="#products">Products</a>
       <a href="#about">About</a>
     </nav>
+    <button id="theme-toggle" class="theme-toggle" type="button">Dark mode</button>
+    <span id="cart-count" class="cart-count">Cart: 0</span>
   </header>
 
   <main>
     <section id="products">
       <h2>Products</h2>
+      <div class="filters">
+        <input id="search" class="search" type="search" placeholder="Search products">
+        <select id="category" class="category">
+          <option value="all">All categories</option>
+          <option value="fruit">Fruit</option>
+          <option value="vegetable">Vegetables</option>
+          <option value="bakery">Bakery</option>
+        </select>
+        <button id="clear-filters" class="clear-filters" type="button">Clear filters</button>
+      </div>
       <div id="product-grid" class="product-grid"></div>
     </section>
+
+    <aside id="cart-panel" class="cart-panel">
+      <h2>Your cart</h2>
+      <ul id="cart-items" class="cart-items"></ul>
+      <p class="cart-total">Total: $<span id="cart-total">0.00</span></p>
+    </aside>
 
     <section id="about">
       <h2>About</h2>
