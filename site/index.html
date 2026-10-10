@@ -20,13 +20,16 @@
   <main>
     <section id="products">
       <h2>Products</h2>
-      <input id="search" class="search" type="search" placeholder="Search products">
-      <select id="category" class="category">
-        <option value="all">All categories</option>
-        <option value="fruit">Fruit</option>
-        <option value="vegetable">Vegetables</option>
-        <option value="bakery">Bakery</option>
-      </select>
+      <div class="filters">
+        <input id="search" class="search" type="search" placeholder="Search products">
+        <select id="category" class="category">
+          <option value="all">All categories</option>
+          <option value="fruit">Fruit</option>
+          <option value="vegetable">Vegetables</option>
+          <option value="bakery">Bakery</option>
+        </select>
+        <button id="clear-filters" class="clear-filters" type="button">Clear filters</button>
+      </div>
       <div id="product-grid" class="product-grid"></div>
     </section>
 

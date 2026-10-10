@@ -102,4 +102,14 @@ document.addEventListener("DOMContentLoaded", () => {
   if (categoryEl) {
     categoryEl.addEventListener("change", filterProducts); // Ticket 53 S3
   }
+
+  // Clear‑filters button (Ticket 53 S4)
+  const clearBtn = document.getElementById("clear-filters");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      document.getElementById("search").value = "";
+      if (categoryEl) categoryEl.value = "all";
+      filterProducts();
+    });
+  }
 });
