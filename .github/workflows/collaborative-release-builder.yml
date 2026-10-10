@@ -6,7 +6,6 @@ on:
       release_name:
         description: "Release name (example: sprint-10). Reuse the same name and commits to resume after resolving a conflict."
         required: true
-        default: "sprint-10"
         type: string
       ticket_1:
         description: "Ticket and its commits, e.g. 20: 6569375 b44a336 (leave unused slots empty)"
