@@ -49,9 +49,16 @@ function applyTheme(dark) {
   document.getElementById("theme-toggle").textContent = dark ? "Light mode" : "Dark mode";
 }
 
+/* New helper from Ticket 51 D4: respect system colour scheme on first visit */
+function preferredDarkTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved) return saved === "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
 function setupThemeToggle() {
-  // Apply saved preference (or default to system‑based first‑visit handling)
-  applyTheme(localStorage.getItem(THEME_KEY) === "dark");
+  // Apply saved preference or fall back to system preference
+  applyTheme(preferredDarkTheme());
   document.getElementById("theme-toggle").addEventListener("click", () => {
     const dark = !document.body.classList.contains("dark");
     applyTheme(dark);
