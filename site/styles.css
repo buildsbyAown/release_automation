@@ -1,0 +1,65 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f7f7f2;
+  color: #1f2a1f;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: #2f6b3a;
+  color: #fff;
+}
+
+.logo {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.nav a {
+  margin-left: 1rem;
+  color: #fff;
+  text-decoration: none;
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.product-card {
+  padding: 1rem;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.product-card h3 {
+  margin: 0 0 0.5rem;
+}
+
+.price {
+  margin: 0;
+  font-weight: bold;
+  color: #2f6b3a;
+}
+
+.site-footer {
+  padding: 1rem 2rem;
+  text-align: center;
+  color: #667;
+}
