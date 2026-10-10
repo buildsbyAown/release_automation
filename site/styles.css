@@ -95,3 +95,12 @@ main {
 .cart-count {
   font-weight: bold;
 }
+
+.search {
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
