@@ -19,6 +19,12 @@ function renderProducts(products) {
   document.getElementById("product-grid").innerHTML = products.map(productCard).join("");
 }
 
+function filterProducts() {
+  const query = document.getElementById("search").value.trim().toLowerCase();
+  renderProducts(PRODUCTS.filter((product) => product.name.toLowerCase().includes(query)));
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts(PRODUCTS);
+  document.getElementById("search").addEventListener("input", filterProducts);
 });
