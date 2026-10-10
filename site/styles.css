@@ -2,11 +2,29 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg: #f7f7f2;
+  --text: #1f2a1f;
+  --header-bg: #2f6b3a;
+  --card-bg: #fff;
+  --accent: #2f6b3a;
+  --muted: #667;
+}
+
+body.dark {
+  --bg: #121712;
+  --text: #e4ece4;
+  --header-bg: #1b3d22;
+  --card-bg: #1e261e;
+  --accent: #7fd18b;
+  --muted: #9aa59a;
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  background: #f7f7f2;
-  color: #1f2a1f;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .site-header {
@@ -14,7 +32,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 2rem;
-  background: #2f6b3a;
+  background: var(--header-bg);
   color: #fff;
 }
 
@@ -44,7 +62,7 @@ main {
 .product-card {
   padding: 1rem;
   border-radius: 8px;
-  background: #fff;
+  background: var(--card-bg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -55,11 +73,11 @@ main {
 .price {
   margin: 0;
   font-weight: bold;
-  color: #2f6b3a;
+  color: var(--accent);
 }
 
 .site-footer {
   padding: 1rem 2rem;
   text-align: center;
-  color: #667;
+  color: var(--muted);
 }
