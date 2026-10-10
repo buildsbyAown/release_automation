@@ -3,14 +3,19 @@
 The model gets, per conflicted file: the common base, the release-branch
 version, the incoming version, the conflicted text, the incoming commit's diff,
 and which tickets wrote each side. It must return the whole resolved file.
-A resolution is only accepted if it has no conflict markers and, for Python
-files, compiles. The caller still runs the release check before committing.
+A resolution is only accepted if it has no conflict markers and is
+syntactically valid (Python compiles, JavaScript parses, HTML tags balance). The caller still runs the release check before committing.
 """
 import json
 import os
 import re
+import shutil
+import subprocess
+import tempfile
 import urllib.error
 import urllib.request
+
+import check_html
 
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 DEFAULT_MODEL = "openai/gpt-oss-120b"
@@ -82,6 +87,21 @@ def _validate(path, content):
             compile(content, path, "exec")
         except SyntaxError as exc:
             return f"the resolved file is not valid Python: {exc.msg} on line {exc.lineno}"
+    if path.endswith(".js") and shutil.which("node"):
+        with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as tmp:
+            tmp.write(content)
+        try:
+            result = subprocess.run(["node", "--check", tmp.name], capture_output=True, text=True)
+        finally:
+            os.unlink(tmp.name)
+        if result.returncode != 0:
+            lines = result.stderr.splitlines()
+            detail = next((line for line in lines if "Error" in line), "syntax error").strip()[:300]
+            return f"the resolved file is not valid JavaScript: {detail}"
+    if path.endswith((".html", ".htm")):
+        issue = check_html.problem(content)
+        if issue:
+            return f"the resolved HTML is malformed: {issue}"
     return None
 
 
