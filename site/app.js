@@ -35,4 +35,9 @@ document.addEventListener("DOMContentLoaded", () => {
   renderProducts(PRODUCTS);
   document.getElementById("search").addEventListener("input", filterProducts);
   document.getElementById("category").addEventListener("change", filterProducts);
+  document.getElementById("clear-filters").addEventListener("click", () => {
+    document.getElementById("search").value = "";
+    document.getElementById("category").value = "all";
+    filterProducts();
+  });
 });
