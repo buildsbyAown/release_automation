@@ -26,13 +26,22 @@ function updateCartCount() {
   document.getElementById("cart-count").textContent = `Cart: ${cart.length}`;
 }
 
+function renderCart() {
+  document.getElementById("cart-items").innerHTML = cart
+    .map((item) => `<li>${item.name} - $${item.price.toFixed(2)}</li>`)
+    .join("");
+  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  document.getElementById("cart-total").textContent = total.toFixed(2);
+  updateCartCount();
+}
+
 function setupCart() {
   document.getElementById("product-grid").addEventListener("click", (event) => {
     const button = event.target.closest(".add-to-cart");
     if (!button) return;
     const product = PRODUCTS.find((item) => item.id === Number(button.dataset.id));
     cart.push(product);
-    updateCartCount();
+    renderCart();
   });
 }
 
