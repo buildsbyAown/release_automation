@@ -1,6 +1,6 @@
 # Collaborative One-Click Release Builder
 
-This workflow lets three developers paste the commit SHAs they want included. It combines the lists, sorts commits by author timestamp oldest-first, cherry-picks each onto a fresh branch from `main`, pauses on a conflict (saving progress and naming the author who must resolve it), runs your tests, pushes the release branch, and opens a PR into `main`. It never merges or deploys.
+This workflow takes the tickets going into a release and the commit SHAs of each ticket. It combines them, sorts commits by author timestamp oldest-first, cherry-picks each onto a fresh branch from `main`, resolves conflicts with an AI that is told which tickets are involved (falling back to pausing and naming the author), runs the release check, pushes the release branch, and opens a PR into `main` that lists every AI resolution for review. It never merges or deploys.
 
 ## Important behavior and limitation
 
@@ -10,13 +10,13 @@ A commit can also apply cleanly and still depend on omitted code. Tests and revi
 
 ## Install
 
-Copy these files into your repository:
+Files:
 - `.github/workflows/collaborative-release-builder.yml`
-- `scripts/assemble_release.py`
+- `scripts/assemble_release.py`: assembles, resumes, and reports.
+- `scripts/ai_resolver.py`: resolves conflicted files through Groq.
+- `scripts/release_check.sh`: the release check (compile + import every module). Add real tests here; it runs in the workflow and after every AI resolution.
 
-Install the dependency `PyYAML` is not required for this version.
-
-Replace the `Run release tests` step in the workflow with the real test/build commands for your project. The included step intentionally fails until you configure tests; do not remove the guard without adding actual checks.
+For AI conflict resolution, add a repository secret **`GROQ_API_KEY`** (Settings → Secrets and variables → Actions → New repository secret). Optionally add a repository variable **`GROQ_MODEL`** to change the model (default `openai/gpt-oss-120b`). Without the secret, conflicts pause for a person as before.
 
 ## Run it
 
@@ -24,9 +24,7 @@ Open **Actions → Collaborative Release Builder → Run workflow**.
 
 Provide:
 - Release name: `sprint-10`
-- Developer 1 commit SHAs: comma- or space-separated full/abbreviated SHAs
-- Developer 2 commit SHAs
-- Developer 3 commit SHAs
+- Ticket slots 1–10, one ticket per slot: `20: 6569375 b44a336` (ticket, colon, the ticket's commit SHAs). Leave unused slots empty. GitHub's form cannot add fields dynamically, so ten slots are provided.
 - Optional approved hotfix SHAs
 
 Every commit must already exist in the repository and be reachable from a pushed branch/tag fetched by the workflow. Do not paste branch names.
@@ -40,7 +38,17 @@ The script:
 6. If `release/<release_name>` already exists, continues it instead of starting over, skipping commits that are already on it.
 7. If all commits apply, runs your configured tests, pushes `release/<release_name>`, and opens a PR into `main`.
 
-## Resolving a cherry-pick conflict
+## AI conflict resolution
+
+When a cherry-pick conflicts and `GROQ_API_KEY` is set, for each conflicted file the AI receives the common base, the release-branch version, the incoming version, the incoming commit's diff, the incoming ticket's commits, and which tickets already on the release branch touched the file. It is instructed to keep the behaviour of both sides.
+
+A resolution is accepted only if it has no conflict markers, is valid Python (for `.py` files), and `scripts/release_check.sh` passes. Otherwise it retries once, then falls back to the manual flow below.
+
+Accepted resolutions are committed with `AI-resolved-conflict`, `AI-resolved-tickets`, `AI-resolver-model` and `AI-resolution-note` lines in the commit message. The release PR lists each one with its explanation and diff, and adds a checkbox for the owners of the tickets involved to review it.
+
+The AI can only be checked as well as `release_check.sh` checks the code. A resolution can run and still drop part of a feature; review every AI resolution, and add tests per ticket to catch this automatically.
+
+## Resolving a cherry-pick conflict by hand
 
 Releases are resumable, so a conflict on commit 50 never throws away commits 1–49.
 
@@ -67,7 +75,7 @@ Then re-run the workflow with **the same inputs and release name**. It skips eve
 
 ```bash
 python3 scripts/assemble_release.py --local --release-name sprint-10 \
-  --dev1 "<shas>" --dev2 "<shas>" --dev3 "<shas>"
+  --ticket "20: <shas>" --ticket "30: <shas>"
 ```
 
 This continues `release/sprint-10` on your machine and stops at each conflict with the cherry-pick left in progress. Fix it, run `git add <files> && git cherry-pick --continue`, and run the same command again. When it reports that all commits are on the branch, `git push origin release/sprint-10` and re-run the workflow to test and open the PR. `--local` never pushes.

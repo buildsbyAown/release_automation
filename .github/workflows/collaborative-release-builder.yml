@@ -8,16 +8,44 @@ on:
         required: true
         default: "sprint-10"
         type: string
-      dev1_commits:
-        description: "Developer 1 commit SHAs, comma or whitespace separated (leave empty if none)"
+      ticket_1:
+        description: "Ticket and its commits, e.g. 20: 6569375 b44a336 (leave unused slots empty)"
         required: false
         type: string
-      dev2_commits:
-        description: "Developer 2 commit SHAs, comma or whitespace separated (leave empty if none)"
+      ticket_2:
+        description: "Ticket and its commits"
         required: false
         type: string
-      dev3_commits:
-        description: "Developer 3 commit SHAs, comma or whitespace separated (leave empty if none)"
+      ticket_3:
+        description: "Ticket and its commits"
+        required: false
+        type: string
+      ticket_4:
+        description: "Ticket and its commits"
+        required: false
+        type: string
+      ticket_5:
+        description: "Ticket and its commits"
+        required: false
+        type: string
+      ticket_6:
+        description: "Ticket and its commits"
+        required: false
+        type: string
+      ticket_7:
+        description: "Ticket and its commits"
+        required: false
+        type: string
+      ticket_8:
+        description: "Ticket and its commits"
+        required: false
+        type: string
+      ticket_9:
+        description: "Ticket and its commits"
+        required: false
+        type: string
+      ticket_10:
+        description: "Ticket and its commits"
         required: false
         type: string
       approved_hotfix_commits:
@@ -66,31 +94,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Install Python dependency
-        run: python -m pip install pyyaml
-
-      - name: Assemble selected commits oldest-first
+      - name: Assemble tickets oldest-first (AI resolves conflicts)
         id: meta
         env:
-          RELEASE_NAME: ${{ inputs.release_name }}
-          DEV1_COMMITS: ${{ inputs.dev1_commits }}
-          DEV2_COMMITS: ${{ inputs.dev2_commits }}
-          DEV3_COMMITS: ${{ inputs.dev3_commits }}
-          HOTFIX_COMMITS: ${{ inputs.approved_hotfix_commits }}
+          WORKFLOW_INPUTS: ${{ toJSON(inputs) }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL }}
         run: |
-          python scripts/assemble_release.py \
-            --release-name "$RELEASE_NAME" \
-            --dev1 "$DEV1_COMMITS" \
-            --dev2 "$DEV2_COMMITS" \
-            --dev3 "$DEV3_COMMITS" \
-            --hotfixes "$HOTFIX_COMMITS"
+          python scripts/assemble_release.py --from-workflow-inputs --ai \
+            --pr-body "$RUNNER_TEMP/release-pr-body.md"
 
       - name: Run release tests
-        run: |
-          python -m compileall -q -x '(^|/)\.git/' .
-          for f in *.py; do
-            python -c "import ${f%.py}" || { echo "::error::Importing $f failed"; exit 1; }
-          done
+        run: bash scripts/release_check.sh
 
       - name: Push release branch
         env:
@@ -101,32 +116,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_NAME: ${{ inputs.release_name }}
-          DEV1_COMMITS: ${{ inputs.dev1_commits }}
-          DEV2_COMMITS: ${{ inputs.dev2_commits }}
-          DEV3_COMMITS: ${{ inputs.dev3_commits }}
-          HOTFIX_COMMITS: ${{ inputs.approved_hotfix_commits }}
         run: |
-          body="$(mktemp)"
-          {
-            echo "## Release candidate: ${RELEASE_NAME}"
-            echo
-            echo "This PR was assembled by Collaborative Release Builder from the latest \`main\`."
-            echo
-            echo "### Submitted commit lists"
-            echo "- Developer 1: \`${DEV1_COMMITS:-none}\`"
-            echo "- Developer 2: \`${DEV2_COMMITS:-none}\`"
-            echo "- Developer 3: \`${DEV3_COMMITS:-none}\`"
-            echo "- Approved hotfixes: \`${HOTFIX_COMMITS:-none}\`"
-            echo
-            echo "### Required validation"
-            echo "- [ ] Developer 1 tested and approved this exact release candidate"
-            echo "- [ ] Developer 2 tested and approved this exact release candidate"
-            echo "- [ ] Developer 3 tested and approved this exact release candidate"
-            echo "- [ ] Required CI checks passed"
-            echo
-            echo "This workflow does not merge or deploy the release."
-          } > "$body"
-
+          body="$RUNNER_TEMP/release-pr-body.md"
           existing="$(gh pr list --base main --head "release/$RELEASE_NAME" --state open --json number --jq '.[0].number')"
           if [ -n "$existing" ] && [ "$existing" != "null" ]; then
             gh pr edit "$existing" --title "Release: ${RELEASE_NAME}" --body-file "$body"
