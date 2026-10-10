@@ -72,3 +72,9 @@ main {
   border-radius: 6px;
   font-size: 1rem;
 }
+
+.no-results {
+  grid-column: 1 / -1;
+  color: #667;
+  font-style: italic;
+}
