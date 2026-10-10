@@ -24,10 +24,15 @@ function renderProducts(products) {
 
 function filterProducts() {
   const query = document.getElementById("search").value.trim().toLowerCase();
-  renderProducts(PRODUCTS.filter((product) => product.name.toLowerCase().includes(query)));
+  const category = document.getElementById("category").value;
+  renderProducts(PRODUCTS.filter((product) =>
+    product.name.toLowerCase().includes(query) &&
+    (category === "all" || product.category === category)
+  ));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts(PRODUCTS);
   document.getElementById("search").addEventListener("input", filterProducts);
+  document.getElementById("category").addEventListener("change", filterProducts);
 });
