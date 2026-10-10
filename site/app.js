@@ -20,6 +20,23 @@ function renderProducts(products) {
   document.getElementById("product-grid").innerHTML = products.map(productCard).join("");
 }
 
+const cart = [];
+
+function updateCartCount() {
+  document.getElementById("cart-count").textContent = `Cart: ${cart.length}`;
+}
+
+function setupCart() {
+  document.getElementById("product-grid").addEventListener("click", (event) => {
+    const button = event.target.closest(".add-to-cart");
+    if (!button) return;
+    const product = PRODUCTS.find((item) => item.id === Number(button.dataset.id));
+    cart.push(product);
+    updateCartCount();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts(PRODUCTS);
+  setupCart();
 });
