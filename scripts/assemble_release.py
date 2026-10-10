@@ -175,20 +175,15 @@ def ai_resolve(item, by_sha, by_ticket):
     if not paths:
         raise ai_resolver.ResolutionError("git reported a failure without conflicting files.")
 
-    if item["is_merge"]:
-        incoming_diff = git("diff", f"{item['sha']}^1", item["sha"], capture=True).stdout
-    else:
-        incoming_diff = git("show", "--format=", item["sha"], capture=True).stdout
     ticket_commits = [f"{c['sha'][:7]} {c['subject']}" for c in by_ticket[item["ticket"]]]
 
     other_tickets = set()
     notes = []
     for path in paths:
-        base, ours, theirs = (stage_content(n, path) for n in (1, 2, 3))
+        ours, theirs = stage_content(2, path), stage_content(3, path)
         if ours is None or theirs is None:
             raise ai_resolver.ResolutionError(f"{path} was deleted on one side; a person must decide.")
-        with open(path, encoding="utf-8") as f:
-            conflicted = f.read()
+        incoming_diff = git("diff", f"{item['sha']}^1", item["sha"], "--", path, capture=True).stdout
 
         release_tickets = []
         for _, original, _ in release_log(path):
@@ -198,7 +193,7 @@ def ai_resolve(item, by_sha, by_ticket):
                 release_tickets.append(f"Ticket {known['ticket']}: {known['subject']} ({', '.join(known['responsible'])})")
 
         print(f"Asking {ai_resolver.model_name()} to resolve {path} ...")
-        content, explanation = ai_resolver.resolve_file(path, base, ours, theirs, conflicted, {
+        content, explanation = ai_resolver.resolve_file(path, ours, theirs, {
             "incoming_ticket": item["ticket"],
             "incoming_subject": item["subject"],
             "incoming_authors": ", ".join(item["responsible"]),
