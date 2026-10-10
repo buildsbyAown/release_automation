@@ -19,6 +19,15 @@ function renderProducts(products) {
   document.getElementById("product-grid").innerHTML = products.map(productCard).join("");
 }
 
+function setupThemeToggle() {
+  const button = document.getElementById("theme-toggle");
+  button.addEventListener("click", () => {
+    const dark = document.body.classList.toggle("dark");
+    button.textContent = dark ? "Light mode" : "Dark mode";
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts(PRODUCTS);
+  setupThemeToggle();
 });
