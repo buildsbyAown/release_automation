@@ -1,0 +1,169 @@
+name: Collaborative Release Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: "Release name (example: sprint-10). Reuse the same name and commits to resume after resolving a conflict."
+        required: true
+        default: "sprint-10"
+        type: string
+      dev1_commits:
+        description: "Developer 1 commit SHAs, comma or whitespace separated (leave empty if none)"
+        required: false
+        type: string
+      dev2_commits:
+        description: "Developer 2 commit SHAs, comma or whitespace separated (leave empty if none)"
+        required: false
+        type: string
+      dev3_commits:
+        description: "Developer 3 commit SHAs, comma or whitespace separated (leave empty if none)"
+        required: false
+        type: string
+      approved_hotfix_commits:
+        description: "Optional approved hotfix commit SHAs, comma or whitespace separated"
+        required: false
+        type: string
+      tested_by_dev1:
+        description: "Developer 1 has tested and approved this release candidate"
+        required: true
+        default: false
+        type: boolean
+      tested_by_dev2:
+        description: "Developer 2 has tested and approved this release candidate"
+        required: true
+        default: false
+        type: boolean
+      tested_by_dev3:
+        description: "Developer 3 has tested and approved this release candidate"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: collaborative-release-${{ inputs.release_name }}
+  cancel-in-progress: false
+
+jobs:
+  assemble:
+    if: ${{ !inputs.tested_by_dev1 && !inputs.tested_by_dev2 && !inputs.tested_by_dev3 }}
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.meta.outputs.branch }}
+    steps:
+      - name: Checkout latest main with full history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Install Python dependency
+        run: python -m pip install pyyaml
+
+      - name: Assemble selected commits oldest-first
+        id: meta
+        env:
+          RELEASE_NAME: ${{ inputs.release_name }}
+          DEV1_COMMITS: ${{ inputs.dev1_commits }}
+          DEV2_COMMITS: ${{ inputs.dev2_commits }}
+          DEV3_COMMITS: ${{ inputs.dev3_commits }}
+          HOTFIX_COMMITS: ${{ inputs.approved_hotfix_commits }}
+        run: |
+          python scripts/assemble_release.py \
+            --release-name "$RELEASE_NAME" \
+            --dev1 "$DEV1_COMMITS" \
+            --dev2 "$DEV2_COMMITS" \
+            --dev3 "$DEV3_COMMITS" \
+            --hotfixes "$HOTFIX_COMMITS"
+
+      - name: Run release tests
+        run: |
+          # REQUIRED: replace with your real project checks.
+          # Examples:
+          # npm ci && npm test && npm run build
+          # python -m pip install -r requirements.txt && pytest
+          # dotnet test
+          echo "::error::Configure this step with the real project test/build commands before using this workflow."
+          exit 1
+
+      - name: Push release branch
+        env:
+          RELEASE_NAME: ${{ inputs.release_name }}
+        run: git push origin "HEAD:release/$RELEASE_NAME"
+
+      - name: Create release PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NAME: ${{ inputs.release_name }}
+          DEV1_COMMITS: ${{ inputs.dev1_commits }}
+          DEV2_COMMITS: ${{ inputs.dev2_commits }}
+          DEV3_COMMITS: ${{ inputs.dev3_commits }}
+          HOTFIX_COMMITS: ${{ inputs.approved_hotfix_commits }}
+        run: |
+          body="$(mktemp)"
+          {
+            echo "## Release candidate: ${RELEASE_NAME}"
+            echo
+            echo "This PR was assembled by Collaborative Release Builder from the latest \`main\`."
+            echo
+            echo "### Submitted commit lists"
+            echo "- Developer 1: \`${DEV1_COMMITS:-none}\`"
+            echo "- Developer 2: \`${DEV2_COMMITS:-none}\`"
+            echo "- Developer 3: \`${DEV3_COMMITS:-none}\`"
+            echo "- Approved hotfixes: \`${HOTFIX_COMMITS:-none}\`"
+            echo
+            echo "### Required validation"
+            echo "- [ ] Developer 1 tested and approved this exact release candidate"
+            echo "- [ ] Developer 2 tested and approved this exact release candidate"
+            echo "- [ ] Developer 3 tested and approved this exact release candidate"
+            echo "- [ ] Required CI checks passed"
+            echo
+            echo "This workflow does not merge or deploy the release."
+          } > "$body"
+
+          existing="$(gh pr list --base main --head "release/$RELEASE_NAME" --state open --json number --jq '.[0].number')"
+          if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+            gh pr edit "$existing" --title "Release: ${RELEASE_NAME}" --body-file "$body"
+          else
+            gh pr create --base main --head "release/$RELEASE_NAME" \
+              --title "Release: ${RELEASE_NAME}" --body-file "$body"
+          fi
+
+  record_testing:
+    if: ${{ inputs.tested_by_dev1 || inputs.tested_by_dev2 || inputs.tested_by_dev3 }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release PR and record approvals
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NAME: ${{ inputs.release_name }}
+          TESTED1: ${{ inputs.tested_by_dev1 }}
+          TESTED2: ${{ inputs.tested_by_dev2 }}
+          TESTED3: ${{ inputs.tested_by_dev3 }}
+        run: |
+          set -euo pipefail
+          branch="release/$RELEASE_NAME"
+          pr="$(gh pr list --base main --head "$branch" --state open --json number --jq '.[0].number')"
+          if [ -z "$pr" ] || [ "$pr" = "null" ]; then
+            echo "::error::No open PR found for $branch. Run the assembly workflow first."
+            exit 1
+          fi
+
+          # This checkbox-style input is only an audit convenience, not strong identity proof.
+          # Configure required approving reviews / CODEOWNERS for enforced approval by each person.
+          body="$(gh pr view "$pr" --json body --jq .body)"
+          if [ "$TESTED1" = "true" ]; then body="$(printf '%s' "$body" | sed 's/- \[ \] Developer 1 tested/- [x] Developer 1 tested/')"; fi
+          if [ "$TESTED2" = "true" ]; then body="$(printf '%s' "$body" | sed 's/- \[ \] Developer 2 tested/- [x] Developer 2 tested/')"; fi
+          if [ "$TESTED3" = "true" ]; then body="$(printf '%s' "$body" | sed 's/- \[ \] Developer 3 tested/- [x] Developer 3 tested/')"; fi
+          printf '%s\n' "$body" > /tmp/pr-body.md
+          gh pr edit "$pr" --body-file /tmp/pr-body.md
+          echo "Updated test checklist on PR #$pr. Actual GitHub review approvals should be required in branch protection."
