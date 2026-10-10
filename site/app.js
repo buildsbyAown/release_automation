@@ -20,11 +20,13 @@ function renderProducts(products) {
   document.getElementById("product-grid").innerHTML = products.map(productCard).join("");
 }
 
+/* Search functionality from Ticket 53 */
 function filterProducts() {
   const query = document.getElementById("search").value.trim().toLowerCase();
   renderProducts(PRODUCTS.filter((product) => product.name.toLowerCase().includes(query)));
 }
 
+/* Dark‑mode toggle from Ticket 51 */
 function setupThemeToggle() {
   const button = document.getElementById("theme-toggle");
   button.addEventListener("click", () => {
@@ -33,8 +35,27 @@ function setupThemeToggle() {
   });
 }
 
+/* Cart functionality from Ticket 52 */
+const cart = [];
+
+function updateCartCount() {
+  document.getElementById("cart-count").textContent = `Cart: ${cart.length}`;
+}
+
+function setupCart() {
+  document.getElementById("product-grid").addEventListener("click", (event) => {
+    const button = event.target.closest(".add-to-cart");
+    if (!button) return;
+    const product = PRODUCTS.find((item) => item.id === Number(button.dataset.id));
+    cart.push(product);
+    updateCartCount();
+  });
+}
+
+/* Initialise everything */
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts(PRODUCTS);
-  setupThemeToggle();
-  document.getElementById("search").addEventListener("input", filterProducts);
+  setupThemeToggle();   // Ticket 51
+  setupCart();          // Ticket 52
+  document.getElementById("search").addEventListener("input", filterProducts); // Ticket 53
 });
