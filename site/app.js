@@ -16,6 +16,7 @@ function productCard(product) {
     </article>`;
 }
 
+/* Render products, showing a message when the list is empty (Ticket 53) */
 function renderProducts(products) {
   const grid = document.getElementById("product-grid");
   grid.innerHTML = products.length
@@ -29,12 +30,21 @@ function filterProducts() {
   renderProducts(PRODUCTS.filter((product) => product.name.toLowerCase().includes(query)));
 }
 
-/* Dark‑mode toggle from Ticket 51 */
+/* Dark‑mode handling from Ticket 51 (enhanced by Ticket 51 D3/D4) */
+const THEME_KEY = "fresh-market-theme";
+
+function applyTheme(dark) {
+  document.body.classList.toggle("dark", dark);
+  document.getElementById("theme-toggle").textContent = dark ? "Light mode" : "Dark mode";
+}
+
 function setupThemeToggle() {
-  const button = document.getElementById("theme-toggle");
-  button.addEventListener("click", () => {
-    const dark = document.body.classList.toggle("dark");
-    button.textContent = dark ? "Light mode" : "Dark mode";
+  // Apply saved preference (or default to system‑based first‑visit handling)
+  applyTheme(localStorage.getItem(THEME_KEY) === "dark");
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    const dark = !document.body.classList.contains("dark");
+    applyTheme(dark);
+    localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
   });
 }
 
