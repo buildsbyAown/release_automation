@@ -19,11 +19,19 @@ function renderProducts(products) {
   document.getElementById("product-grid").innerHTML = products.map(productCard).join("");
 }
 
+const THEME_KEY = "fresh-market-theme";
+
+function applyTheme(dark) {
+  document.body.classList.toggle("dark", dark);
+  document.getElementById("theme-toggle").textContent = dark ? "Light mode" : "Dark mode";
+}
+
 function setupThemeToggle() {
-  const button = document.getElementById("theme-toggle");
-  button.addEventListener("click", () => {
-    const dark = document.body.classList.toggle("dark");
-    button.textContent = dark ? "Light mode" : "Dark mode";
+  applyTheme(localStorage.getItem(THEME_KEY) === "dark");
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    const dark = !document.body.classList.contains("dark");
+    applyTheme(dark);
+    localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
   });
 }
 
