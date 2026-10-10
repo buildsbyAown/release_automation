@@ -75,7 +75,11 @@ function updateCartCount() {
 
 function renderCart() {
   document.getElementById("cart-items").innerHTML = cart
-    .map((item) => `<li>${item.name} - $${item.price.toFixed(2)}</li>`)
+    .map((item, index) => `
+      <li>
+        ${item.name} - $${item.price.toFixed(2)}
+        <button class="remove-item" type="button" data-index="${index}">Remove</button>
+      </li>`)
     .join("");
   const total = cart.reduce((sum, item) => sum + item.price, 0);
   document.getElementById("cart-total").textContent = total.toFixed(2);
@@ -88,6 +92,12 @@ function setupCart() {
     if (!button) return;
     const product = PRODUCTS.find((item) => item.id === Number(button.dataset.id));
     cart.push(product);
+    renderCart();
+  });
+  document.getElementById("cart-items").addEventListener("click", (event) => {
+    const button = event.target.closest(".remove-item");
+    if (!button) return;
+    cart.splice(Number(button.dataset.index), 1);
     renderCart();
   });
 }

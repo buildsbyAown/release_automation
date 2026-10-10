@@ -116,6 +116,15 @@ main {
   font-weight: bold;
 }
 
+/* Added by Ticket 52 – remove item button */
+.remove-item {
+  margin-left: 0.5rem;
+  border: none;
+  background: none;
+  color: #b33;
+  cursor: pointer;
+}
+
 /* Ticket 53 – search UI */
 .filters {
   display: flex;
