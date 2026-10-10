@@ -87,13 +87,10 @@ jobs:
 
       - name: Run release tests
         run: |
-          # REQUIRED: replace with your real project checks.
-          # Examples:
-          # npm ci && npm test && npm run build
-          # python -m pip install -r requirements.txt && pytest
-          # dotnet test
-          echo "::error::Configure this step with the real project test/build commands before using this workflow."
-          exit 1
+          python -m compileall -q -x '(^|/)\.git/' .
+          for f in *.py; do
+            python -c "import ${f%.py}" || { echo "::error::Importing $f failed"; exit 1; }
+          done
 
       - name: Push release branch
         env:
