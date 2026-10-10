@@ -93,3 +93,11 @@ main {
 .cart-total {
   font-weight: bold;
 }
+
+.remove-item {
+  margin-left: 0.5rem;
+  border: none;
+  background: none;
+  color: #b33;
+  cursor: pointer;
+}
