@@ -1,6 +1,6 @@
 # Collaborative One-Click Release Builder
 
-This workflow lets three developers paste the commit SHAs they want included. It combines the lists, sorts commits by author timestamp oldest-first, cherry-picks each onto a fresh branch from `main`, stops and reports the original commit author on failure, runs your tests, pushes the release branch, and opens a PR into `main`. It never merges or deploys.
+This workflow lets three developers paste the commit SHAs they want included. It combines the lists, sorts commits by author timestamp oldest-first, cherry-picks each onto a fresh branch from `main`, pauses on a conflict (saving progress and naming the author who must resolve it), runs your tests, pushes the release branch, and opens a PR into `main`. It never merges or deploys.
 
 ## Important behavior and limitation
 
@@ -35,24 +35,46 @@ The script:
 1. Starts from the latest `main`.
 2. Validates SHAs and rejects duplicates.
 3. Sorts all submitted commits by author timestamp, oldest first. You can submit plain commits or PR merge commits (`Merge pull request #N ...`); a merge commit is applied as that PR's changes (`git cherry-pick -m 1`). Do not submit "Merge branch 'staging' into ..." sync merges, as they would bring in the whole target branch.
-4. Cherry-picks each commit one by one.
-5. If a commit's changes are already included (empty cherry-pick), skips it with a warning. If a cherry-pick fails, prints the commit title, SHA, the authors to resolve it (for a PR merge, the authors of the PR's commits), who merged it, branches containing it, and conflicting files, and stops. It aborts the in-progress cherry-pick and does not push a release branch or open a PR.
-6. If all commits apply, runs your configured tests, pushes `release/<release_name>`, and opens a PR into `main`.
+4. Cherry-picks each commit one by one with `-x`.
+5. If a commit's changes are already included (empty cherry-pick), skips it with a warning. If a cherry-pick fails, prints the commit title, SHA, the authors to resolve it (for a PR merge, the authors of the PR's commits), who merged it, branches containing it, and conflicting files, and stops. The commits applied so far are pushed to `release/<release_name>` so the run can be resumed (see below); no PR is opened.
+6. If `release/<release_name>` already exists, continues it instead of starting over, skipping commits that are already on it.
+7. If all commits apply, runs your configured tests, pushes `release/<release_name>`, and opens a PR into `main`.
 
 ## Resolving a cherry-pick conflict
 
-The workflow cannot pause for manual edits, so the author named in the error resolves the conflict locally and resubmits a fixed commit:
+Releases are resumable, so a conflict on commit 50 never throws away commits 1–49.
 
-1. From a clean checkout, run the same commit list with `--local`:
-   ```bash
-   python3 scripts/assemble_release.py --release-name sprint-10 --local \
-     --dev1 "<shas>" --dev2 "<shas>" --dev3 "<shas>"
-   ```
-   It starts from `origin/main` on a detached HEAD, applies the commits in the same order as the workflow, and stops on the conflicting commit with the cherry-pick left in progress.
-2. Fix the conflict markers, then `git add <files>` and `git cherry-pick --continue`.
-3. Publish the fixed commit: `git push origin HEAD:refs/heads/resolved/<old-short-sha>`.
-4. Replace the old SHA with the new one (`git rev-parse --short HEAD`) in the commit list and re-run step 1. The fixed commit keeps the original author date, so it stays in the same position.
-5. Repeat until the local run reports that all commits apply, then run the workflow with that final list. Run `git switch main` to leave the detached HEAD.
+Every commit is cherry-picked with `git cherry-pick -x`, which adds `(cherry picked from commit <sha>)` to the new commit. That line is how the builder knows which submitted commits are already on `release/<release_name>`.
+
+When a cherry-pick conflicts, the workflow:
+1. Pushes the commits applied so far to `release/<release_name>`. It does not run tests or open a PR.
+2. Names the commit, its title, and the author(s) who must resolve it. The step log and run summary show the exact commands to run.
+
+**Resolve only the conflicting commit** (the commands are printed with the real SHA):
+
+```bash
+git fetch origin
+git switch release/sprint-10 && git pull --ff-only
+git cherry-pick -x <sha>          # add -m 1 for a PR merge commit
+# fix the conflict markers
+git add <files> && git cherry-pick --continue
+git push origin release/sprint-10
+```
+
+Then re-run the workflow with **the same inputs and release name**. It skips everything already on the branch and continues from the next commit. If another conflict appears, its author repeats the same steps.
+
+**Or resolve every remaining conflict locally in one go:**
+
+```bash
+python3 scripts/assemble_release.py --local --release-name sprint-10 \
+  --dev1 "<shas>" --dev2 "<shas>" --dev3 "<shas>"
+```
+
+This continues `release/sprint-10` on your machine and stops at each conflict with the cherry-pick left in progress. Fix it, run `git add <files> && git cherry-pick --continue`, and run the same command again. When it reports that all commits are on the branch, `git push origin release/sprint-10` and re-run the workflow to test and open the PR. `--local` never pushes.
+
+Rules:
+- Always use `-x` when resolving by hand. A commit without the `(cherry picked from commit ...)` line is kept, but the builder will try to apply the original again.
+- Keep the same commit list when resuming. If `release/<release_name>` contains commits that are no longer in the list, the run stops; delete the branch to start over with a new list.
 
 ## GitHub permissions and protections
 

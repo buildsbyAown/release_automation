@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_name:
-        description: "Unique release name (example: sprint-10)"
+        description: "Release name (example: sprint-10). Reuse the same name and commits to resume after resolving a conflict."
         required: true
         default: "sprint-10"
         type: string
