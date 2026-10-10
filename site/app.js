@@ -24,10 +24,21 @@ function renderProducts(products) {
     : '<p class="no-results">No products match your search.</p>';
 }
 
-/* Search functionality from Ticket 53 */
+/* Search + optional category filter (Ticket 53 S1‑S3) */
 function filterProducts() {
   const query = document.getElementById("search").value.trim().toLowerCase();
-  renderProducts(PRODUCTS.filter((product) => product.name.toLowerCase().includes(query)));
+
+  // Category filter is optional – if the element does not exist we treat it as "all"
+  const categorySelect = document.getElementById("category");
+  const category = categorySelect ? categorySelect.value : "all";
+
+  renderProducts(
+    PRODUCTS.filter(
+      (product) =>
+        product.name.toLowerCase().includes(query) &&
+        (category === "all" || product.category === category)
+    )
+  );
 }
 
 /* Dark‑mode handling from Ticket 51 (enhanced by Ticket 51 D3/D4) */
@@ -70,5 +81,9 @@ document.addEventListener("DOMContentLoaded", () => {
   renderProducts(PRODUCTS);
   setupThemeToggle();   // Ticket 51
   setupCart();          // Ticket 52
-  document.getElementById("search").addEventListener("input", filterProducts); // Ticket 53
+  document.getElementById("search").addEventListener("input", filterProducts); // Ticket 53 S1
+  const categoryEl = document.getElementById("category");
+  if (categoryEl) {
+    categoryEl.addEventListener("change", filterProducts); // Ticket 53 S3
+  }
 });
