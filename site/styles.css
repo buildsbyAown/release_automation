@@ -20,11 +20,14 @@ body.dark {
   --muted: #9aa59a;
 }
 
+/* Preserve the original body styling that uses CSS variables.
+   The hard‑coded colours from the incoming change are kept as fallbacks
+   via the var() function, so the dark‑mode variables still work. */
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--bg, #f7f7f2);
+  color: var(--text, #1f2a1f);
 }
 
 .site-header {
@@ -32,7 +35,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 2rem;
-  background: var(--header-bg);
+  background: var(--header-bg, #2f6b3a);
   color: #fff;
 }
 
@@ -62,7 +65,7 @@ main {
 .product-card {
   padding: 1rem;
   border-radius: 8px;
-  background: var(--card-bg);
+  background: var(--card-bg, #fff);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -73,13 +76,13 @@ main {
 .price {
   margin: 0;
   font-weight: bold;
-  color: var(--accent);
+  color: var(--accent, #2f6b3a);
 }
 
 .site-footer {
   padding: 1rem 2rem;
   text-align: center;
-  color: var(--muted);
+  color: var(--muted, #667);
 }
 
 .add-to-cart {
@@ -96,6 +99,24 @@ main {
   font-weight: bold;
 }
 
+/* Incoming Ticket 52 – cart panel styles */
+.cart-panel {
+  margin-top: 2rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cart-items {
+  padding-left: 1.2rem;
+}
+
+.cart-total {
+  font-weight: bold;
+}
+
+/* Ticket 53 – search UI */
 .search {
   width: 100%;
   margin-bottom: 1rem;
@@ -112,6 +133,7 @@ main {
   font-style: italic;
 }
 
+/* Ticket 51 – theme toggle button */
 .theme-toggle {
   padding: 0.4rem 0.8rem;
   border: 1px solid #fff;
