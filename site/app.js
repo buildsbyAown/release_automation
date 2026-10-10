@@ -26,8 +26,14 @@ function applyTheme(dark) {
   document.getElementById("theme-toggle").textContent = dark ? "Light mode" : "Dark mode";
 }
 
+function preferredDarkTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved) return saved === "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
 function setupThemeToggle() {
-  applyTheme(localStorage.getItem(THEME_KEY) === "dark");
+  applyTheme(preferredDarkTheme());
   document.getElementById("theme-toggle").addEventListener("click", () => {
     const dark = !document.body.classList.contains("dark");
     applyTheme(dark);
