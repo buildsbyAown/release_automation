@@ -9,16 +9,16 @@ on:
         default: "sprint-10"
         type: string
       dev1_commits:
-        description: "Developer 1 commit SHAs, comma or whitespace separated"
-        required: true
+        description: "Developer 1 commit SHAs, comma or whitespace separated (leave empty if none)"
+        required: false
         type: string
       dev2_commits:
-        description: "Developer 2 commit SHAs, comma or whitespace separated"
-        required: true
+        description: "Developer 2 commit SHAs, comma or whitespace separated (leave empty if none)"
+        required: false
         type: string
       dev3_commits:
-        description: "Developer 3 commit SHAs, comma or whitespace separated"
-        required: true
+        description: "Developer 3 commit SHAs, comma or whitespace separated (leave empty if none)"
+        required: false
         type: string
       approved_hotfix_commits:
         description: "Optional approved hotfix commit SHAs, comma or whitespace separated"
@@ -116,9 +116,9 @@ jobs:
             echo "This PR was assembled by Collaborative Release Builder from the latest \`main\`."
             echo
             echo "### Submitted commit lists"
-            echo "- Developer 1: \`${DEV1_COMMITS}\`"
-            echo "- Developer 2: \`${DEV2_COMMITS}\`"
-            echo "- Developer 3: \`${DEV3_COMMITS}\`"
+            echo "- Developer 1: \`${DEV1_COMMITS:-none}\`"
+            echo "- Developer 2: \`${DEV2_COMMITS:-none}\`"
+            echo "- Developer 3: \`${DEV3_COMMITS:-none}\`"
             echo "- Approved hotfixes: \`${HOTFIX_COMMITS:-none}\`"
             echo
             echo "### Required validation"
