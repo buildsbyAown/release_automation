@@ -8,9 +8,14 @@ TAX_RATES = {
 TAX_EXEMPT_CATEGORIES = {"groceries", "medicine"}
 
 
+def tax_amount(amount, region="default", category=None):
+    """Return only the tax owed on the amount."""
+    if category in TAX_EXEMPT_CATEGORIES:
+        return 0.0
+    rate = TAX_RATES.get(region, TAX_RATES["default"])
+    return round(amount * rate, 2)
+
+
 def apply_tax(amount, region="default", category=None):
     """Return the amount with the region's sales tax added; exempt categories are not taxed."""
-    if category in TAX_EXEMPT_CATEGORIES:
-        return round(amount, 2)
-    rate = TAX_RATES.get(region, TAX_RATES["default"])
-    return round(amount * (1 + rate), 2)
+    return round(amount + tax_amount(amount, region, category), 2)
